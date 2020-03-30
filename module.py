@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 
 def gather_data():
@@ -28,7 +29,33 @@ def create_country_dict(df):
 
 def format_time_series(df_dict):
     for key in df_dict.keys():
+
         df_dict[key].date = pd.to_datetime(df_dict[key].date)
+        df_dict[key].sort_values('date', ascending = [True], inplace = True)
+        df_dict[key].drop(columns = ['lat', 'long'], inplace = True)
         df_dict[key].set_index('date', inplace = True)
-        df_dict[key].drop('country', axis = 1, inplace = True)
+        df_dict[key] = df_dict[key].groupby(['date', 'country']).sum().reset_index()
+        
+        
+        df_dict[key]['recovered'] = df_dict[key]['recovered'].fillna(0)
+        
+        df_dict[key]['conf_pct_change'] = df_dict[key]['confirmed'].pct_change(periods = 1).fillna(0)
+        df_dict[key]['rec_pct_change'] = df_dict[key]['recovered'].pct_change(periods = 1).fillna(0)
+        df_dict[key]['death_pct_change'] = df_dict[key]['deaths'].pct_change(periods = 1).fillna(0)
+        
     return df_dict
+
+def plot_time_series(df_dict):
+    for key in df_dict.keys():
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows = 1, ncols = 3, figsize = (30,5))
+        
+        ax1.plot(df_dict[key]['confirmed'], color = 'blue', lw = 3, label = 'Confirmed')
+        ax2.plot(df_dict[key]['recovered'], color = 'green', lw = 3, label = 'Recovered')
+        ax3.plot(df_dict[key]['deaths'], color = 'red', lw = 3, label = 'Deaths')
+        
+        plt.legend(loc = 'upper left')
+        ax2.title.set_text(f"{key[:-3]}")
+        
+        plt.tight_layout()
+        
+        
