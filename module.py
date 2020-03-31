@@ -35,7 +35,7 @@ def format_time_series(df_dict):
         df_dict[key].drop(columns = ['lat', 'long'], inplace = True)
         df_dict[key].set_index('date', inplace = True)
         df_dict[key] = df_dict[key].groupby(['date', 'country']).sum().reset_index()
-        
+        df_dict[key].set_index('date', inplace = True)
         
         df_dict[key]['recovered'] = df_dict[key]['recovered'].fillna(0)
         
@@ -53,8 +53,13 @@ def plot_time_series(df_dict):
         ax2.plot(df_dict[key]['recovered'], color = 'green', lw = 3, label = 'Recovered')
         ax3.plot(df_dict[key]['deaths'], color = 'red', lw = 3, label = 'Deaths')
         
-        plt.legend(loc = 'upper left')
-        ax2.title.set_text(f"{key[:-3]}")
+        ax1.set_ylabel('Number of People', fontsize = 14, fontweight = 'bold')
+        
+        ax1.set_title('Confirmed')
+        ax2.set_title('Recovered')
+        ax3.set_title('Deaths')
+        
+        plt.suptitle(f"{key[:-3]}", fontsize = 25, fontweight = 'bold', y = 1.08)
         
         plt.tight_layout()
         
