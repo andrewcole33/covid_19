@@ -3,17 +3,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def gather_data():
-    confirmed_df = pd.read_csv('data/time_series_covid19_confirmed_global.csv')
-    deaths_df = pd.read_csv('data/time_series_covid19_deaths_global.csv')
-    recovered_df = pd.read_csv('data/time_series_covid19_deaths_global.csv')
+def format_full(df, code_df):
     
-    df_list = [confirmed_df, deaths_df, recovered_df]
-    for df in df_list:
-        df['total'] = df.iloc[:,4:].sum(axis = 1)
-        
-    return confirmed_df, deaths_df, recovered_df
+    df['code'] = None
+    df.columns = ['date', 'country', 'state', 'lat', 'long', 'confirmed', 'recovered', 'deaths', 'code']
+    df.drop(['state', 'lat', 'long'], axis = 1, inplace = True)
+    
+    codes = code_df.drop(['Alpha-2 code', 'Numeric code', 'Latitude (average)', 'Longitude (average)'], axis = 1)
+    codes.columns = ['country', 'code']
+    
+    rename_dict = codes.set_index('country').to_dict()['code']
+    
+    df.date = pd.to_datetime(df.date)
+    df.sort_values('date', ascending = True, inplace = True)
+    df.recovered = df.recovered.fillna(0)
+    df['code'] = df.country
+    df.code = df.code.replace(rename_dict)
+    df.recovered = df.recovered.fillna(0)
 
+    
+    df = df.sort_values(['country', 'date'])
+    df.set_index('date', inplace = True)
+    
+    df = df[['country', 'code', 'confirmed', 'recovered', 'deaths']]
+    
+    
+    
+    return df
 
 def create_country_dict(df):
     country_df_names = []
@@ -27,40 +43,18 @@ def create_country_dict(df):
     
     return country_df_dict
 
-def format_time_series(df_dict):
-    for key in df_dict.keys():
-
-        df_dict[key].date = pd.to_datetime(df_dict[key].date)
-        df_dict[key].sort_values('date', ascending = [True], inplace = True)
-        df_dict[key].drop(columns = ['lat', 'long'], inplace = True)
-        df_dict[key].set_index('date', inplace = True)
-        df_dict[key] = df_dict[key].groupby(['date', 'country']).sum().reset_index()
-        df_dict[key].set_index('date', inplace = True)
-        
-        df_dict[key]['recovered'] = df_dict[key]['recovered'].fillna(0)
-        
-        df_dict[key]['conf_pct_change'] = (df_dict[key]['confirmed'].pct_change(periods = 1).fillna(0))*100
-        df_dict[key]['rec_pct_change'] = (df_dict[key]['recovered'].pct_change(periods = 1).fillna(0))*100
-        df_dict[key]['death_pct_change'] = (df_dict[key]['deaths'].pct_change(periods = 1).fillna(0))*100
-
-    return df_dict
 
 def plot_time_series(df_dict):
     for key in df_dict.keys():
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows = 1, ncols = 3, figsize = (30,5))
-        
-        ax1.plot(df_dict[key]['confirmed'], color = 'blue', lw = 3, label = 'Confirmed')
-        ax2.plot(df_dict[key]['recovered'], color = 'green', lw = 3, label = 'Recovered')
-        ax3.plot(df_dict[key]['deaths'], color = 'red', lw = 3, label = 'Deaths')
-        
-        ax1.set_ylabel('Number of People', fontsize = 14, fontweight = 'bold')
-        
-        ax1.set_title('Confirmed')
-        ax2.set_title('Recovered')
-        ax3.set_title('Deaths')
-        
-        plt.suptitle(f"{key[:-3]}", fontsize = 25, fontweight = 'bold', y = 1.08)
-        
+        t = df_dict[key].plot(figsize = (30, 10), color = ['blue', 'green', 'red'], lw = 2)
+        t.set_xlabel('Date', fontweight = 'bold', fontsize = 25)
+        t.set_ylabel('Number of Cases', fontweight = 'bold', fontsize = 25)
+        t.set_title(f'{key} COVID-19 Progression', fontsize = 35, fontweight = 'bold')
+        t.tick_params(axis = 'both', which = 'both', labelsize = 20)
+        t.legend(loc = 'best', prop = {'size': 20}, frameon = True, edgecolor = 'black', fancybox = True)
         plt.tight_layout()
+        
+    return t
+        
         
         
