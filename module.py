@@ -18,12 +18,12 @@ def gather_data():
 def create_country_dict(df):
     country_df_names = []
     for country in df.country.unique().tolist():
-        df_name = f"{country}_df"
+        df_name = f"{country}"
         country_df_names.append(df_name)
         
     country_df_dict = {}
     for name in country_df_names:
-        country_df_dict[name] = df[df.country == name[:-3]]
+        country_df_dict[name] = df[df.country == name]
     
     return country_df_dict
 
@@ -39,10 +39,10 @@ def format_time_series(df_dict):
         
         df_dict[key]['recovered'] = df_dict[key]['recovered'].fillna(0)
         
-        df_dict[key]['conf_pct_change'] = df_dict[key]['confirmed'].pct_change(periods = 1).fillna(0)
-        df_dict[key]['rec_pct_change'] = df_dict[key]['recovered'].pct_change(periods = 1).fillna(0)
-        df_dict[key]['death_pct_change'] = df_dict[key]['deaths'].pct_change(periods = 1).fillna(0)
-        
+        df_dict[key]['conf_pct_change'] = (df_dict[key]['confirmed'].pct_change(periods = 1).fillna(0))*100
+        df_dict[key]['rec_pct_change'] = (df_dict[key]['recovered'].pct_change(periods = 1).fillna(0))*100
+        df_dict[key]['death_pct_change'] = (df_dict[key]['deaths'].pct_change(periods = 1).fillna(0))*100
+
     return df_dict
 
 def plot_time_series(df_dict):
